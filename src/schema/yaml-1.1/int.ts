@@ -1,6 +1,7 @@
 import type { Scalar } from '../../nodes/Scalar.ts'
 import type { ParseOptions } from '../../options.ts'
 import { stringifyNumber } from '../../stringify/stringifyNumber.ts'
+import type { StringifyContext } from '../../stringify/stringify.ts'
 import type { ScalarTag } from '../types.ts'
 
 const intIdentify = (value: unknown): value is number | bigint =>
@@ -34,13 +35,20 @@ function intResolve(
   return sign === '-' ? -1 * n : n
 }
 
-function intStringify(node: Scalar, radix: number, prefix: string) {
+function intStringify(
+  node: Scalar,
+  radix: number,
+  prefix: string,
+  ctx?: StringifyContext,
+  onComment?: () => void,
+  onChompKeep?: () => void
+) {
   const { value } = node
   if (intIdentify(value)) {
     const str = value.toString(radix)
     return value < 0 ? '-' + prefix + str.substr(1) : prefix + str
   }
-  return stringifyNumber(node)
+  return stringifyNumber(node, ctx, onComment, onChompKeep)
 }
 
 export const intBin: ScalarTag = {
@@ -51,7 +59,8 @@ export const intBin: ScalarTag = {
   test: /^[-+]?0b[0-1_]+$/,
   resolve: (str: string, _onError: unknown, opt: ParseOptions) =>
     intResolve(str, 2, 2, opt),
-  stringify: node => intStringify(node, 2, '0b')
+  stringify: (node, ctx, onComment, onChompKeep) =>
+    intStringify(node, 2, '0b', ctx, onComment, onChompKeep)
 }
 
 export const intOct: ScalarTag = {
@@ -62,7 +71,8 @@ export const intOct: ScalarTag = {
   test: /^[-+]?0[0-7_]+$/,
   resolve: (str: string, _onError: unknown, opt: ParseOptions) =>
     intResolve(str, 1, 8, opt),
-  stringify: node => intStringify(node, 8, '0')
+  stringify: (node, ctx, onComment, onChompKeep) =>
+    intStringify(node, 8, '0', ctx, onComment, onChompKeep)
 }
 
 export const int: ScalarTag = {
@@ -83,5 +93,6 @@ export const intHex: ScalarTag = {
   test: /^[-+]?0x[0-9a-fA-F_]+$/,
   resolve: (str: string, _onError: unknown, opt: ParseOptions) =>
     intResolve(str, 2, 16, opt),
-  stringify: node => intStringify(node, 16, '0x')
+  stringify: (node, ctx, onComment, onChompKeep) =>
+    intStringify(node, 16, '0x', ctx, onComment, onChompKeep)
 }

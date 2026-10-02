@@ -1,14 +1,25 @@
 import type { Scalar } from '../nodes/Scalar.ts'
+import { stringifyString } from './stringifyString.ts'
+import type { StringifyContext } from './stringify.ts'
 
-export function stringifyNumber({
-  format,
-  minFractionDigits,
-  tag,
-  value
-}: Scalar): string {
+export function stringifyNumber(
+  node: Scalar,
+  ctx?: StringifyContext,
+  onComment?: () => void,
+  onChompKeep?: () => void
+): string {
+  const { format, minFractionDigits, tag, value } = node
   if (typeof value === 'bigint') return String(value)
-  const num = typeof value === 'number' ? value : Number(value)
-  if (!isFinite(num)) return isNaN(num) ? '.nan' : num < 0 ? '-.inf' : '.inf'
+  // A non-number value may end up here when an explicit !!float tag is
+  // attached to a value that the schema does not resolve as a number,
+  // e.g. `!!float abc`. Serialize it as a string instead of coercing it
+  // with Number(), which would turn arbitrary strings into NaN.
+  if (typeof value !== 'number')
+    return ctx
+      ? stringifyString(node, ctx, onComment, onChompKeep)
+      : String(value)
+  if (!isFinite(value))
+    return Number.isNaN(value) ? '.nan' : value < 0 ? '-.inf' : '.inf'
   let n = Object.is(value, -0) ? '-0' : JSON.stringify(value)
   if (
     !format &&

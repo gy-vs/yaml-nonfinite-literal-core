@@ -1,5 +1,6 @@
 import type { Scalar } from '../../nodes/Scalar.ts'
 import { stringifyNumber } from '../../stringify/stringifyNumber.ts'
+import type { StringifyContext } from '../../stringify/stringify.ts'
 import type { ScalarTag } from '../types.ts'
 
 /** Internal types handle bigint as number, because TS can't figure it out. */
@@ -22,11 +23,17 @@ function parseSexagesimal<B extends boolean>(str: string, asBigInt?: B) {
  *
  * Internal types handle bigint as number, because TS can't figure it out.
  */
-function stringifySexagesimal(node: Scalar) {
+function stringifySexagesimal(
+  node: Scalar,
+  ctx?: StringifyContext,
+  onComment?: () => void,
+  onChompKeep?: () => void
+) {
   let { value } = node as Scalar<number>
   let num = (n: number) => n
   if (typeof value === 'bigint') num = n => BigInt(n) as unknown as number
-  else if (isNaN(value) || !isFinite(value)) return stringifyNumber(node)
+  else if (isNaN(value) || !isFinite(value))
+    return stringifyNumber(node, ctx, onComment, onChompKeep)
   let sign = ''
   if (value < 0) {
     sign = '-'

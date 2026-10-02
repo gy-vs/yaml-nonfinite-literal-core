@@ -1,6 +1,7 @@
 import type { Scalar } from '../../nodes/Scalar.ts'
 import type { ParseOptions } from '../../options.ts'
 import { stringifyNumber } from '../../stringify/stringifyNumber.ts'
+import type { StringifyContext } from '../../stringify/stringify.ts'
 import type { ScalarTag } from '../types.ts'
 
 const intIdentify = (value: unknown): value is number | bigint =>
@@ -13,10 +14,17 @@ const intResolve = (
   { intAsBigInt }: ParseOptions
 ) => (intAsBigInt ? BigInt(str) : parseInt(str.substring(offset), radix))
 
-function intStringify(node: Scalar, radix: number, prefix: string) {
+function intStringify(
+  node: Scalar,
+  radix: number,
+  prefix: string,
+  ctx?: StringifyContext,
+  onComment?: () => void,
+  onChompKeep?: () => void
+) {
   const { value } = node
   if (intIdentify(value) && value >= 0) return prefix + value.toString(radix)
-  return stringifyNumber(node)
+  return stringifyNumber(node, ctx, onComment, onChompKeep)
 }
 
 export const intOct: ScalarTag = {
@@ -26,7 +34,8 @@ export const intOct: ScalarTag = {
   format: 'OCT',
   test: /^0o[0-7]+$/,
   resolve: (str, _onError, opt) => intResolve(str, 2, 8, opt),
-  stringify: node => intStringify(node, 8, '0o')
+  stringify: (node, ctx, onComment, onChompKeep) =>
+    intStringify(node, 8, '0o', ctx, onComment, onChompKeep)
 }
 
 export const int: ScalarTag = {
@@ -45,5 +54,6 @@ export const intHex: ScalarTag = {
   format: 'HEX',
   test: /^0x[0-9a-fA-F]+$/,
   resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
-  stringify: node => intStringify(node, 16, '0x')
+  stringify: (node, ctx, onComment, onChompKeep) =>
+    intStringify(node, 16, '0x', ctx, onComment, onChompKeep)
 }

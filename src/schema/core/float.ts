@@ -23,9 +23,11 @@ export const floatExp: ScalarTag = {
   format: 'EXP',
   test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
   resolve: str => parseFloat(str),
-  stringify(node) {
+  stringify(node, ctx, onComment, onChompKeep) {
     const num = Number(node.value)
-    return isFinite(num) ? num.toExponential() : stringifyNumber(node)
+    return typeof node.value === 'number' && isFinite(num)
+      ? num.toExponential()
+      : stringifyNumber(node, ctx, onComment, onChompKeep)
   }
 }
 
